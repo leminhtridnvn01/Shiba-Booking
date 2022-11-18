@@ -10,7 +10,6 @@ namespace Booking.API.Controllers
 {
     [ApiController]
     [Route("api/booking")]
-    [Authorize]
     public class RoomController : ControllerBase
     {
         private readonly RoomService _roomService;

@@ -9,6 +9,7 @@ builder.Services.AddControllersWithViews()
     .AddNewtonsoftJson(options =>
     options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
 );
+builder.Services.AddCors();
 
 var configuration = new ConfigurationBuilder()
     .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
@@ -17,6 +18,7 @@ var configuration = new ConfigurationBuilder()
     .AddEnvironmentVariables().Build();
 
 configuration.GetSection("AppSettings").Get<AppSettings>(options => options.BindNonPublicProperties = true);
+configuration.GetSection("CloudinarySettings").Get<CloudinarySettings>(options => options.BindNonPublicProperties = true);
 
 //var hcBuilder = builder.Services.AddHealthChecks();
 
@@ -41,9 +43,8 @@ app.UseCors(x => x
                 .AllowAnyHeader()
                 .SetIsOriginAllowed(origin => true) // allow any origin
                                                     //.AllowCredentials()
-                .WithExposedHeaders("*"));
-
-app.UseRouting();
+                .WithExposedHeaders("*")
+                .SetPreflightMaxAge(TimeSpan.FromSeconds(600)));
 
 app.UseAuthentication();
 

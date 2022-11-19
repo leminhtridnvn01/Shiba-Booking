@@ -8,14 +8,14 @@ namespace Booking.API.ViewModel.Bookings.Request
 {
     public class GetBookingRequest : ISelection<BookingEntity, GetBookingResponse>
     {
-        public Expression<Func<BookingEntity, bool>> GetFilterByUser(int userId)
+        public Expression<Func<BookingEntity, bool>> GetFilterByUser(string userId)
         {
             return _ => _.UserId == userId && !_.IsDelete;
         }
 
         public Expression<Func<BookingEntity, bool>> GetFilterByBusiness(int businessId)
         {
-            return _ => _.BusinessId == businessId && !_.IsDelete;
+            return _ => _.BusinessId.Equals(businessId) && !_.IsDelete;
         }
 
         public Expression<Func<BookingEntity, GetBookingResponse>> GetSelection()

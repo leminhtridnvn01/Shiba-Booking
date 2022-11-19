@@ -9,9 +9,9 @@ namespace Booking.Domain.Entities
 {
     public partial class Booking : Entity
     {
-        public int BusinessId { get; private set; }
+        public string BusinessId { get; private set; }
         public int RoomId { get; private set; }
-        public int UserId { get; private set; }
+        public string UserId { get; private set; }
         public string UserName { get; private set; }
         public DateTime StartDay { get; private set; }
         public DateTime FinishDay { get; private set; }

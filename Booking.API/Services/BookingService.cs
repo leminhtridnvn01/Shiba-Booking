@@ -4,17 +4,19 @@ using Booking.Domain.Interfaces;
 using Booking.Domain.Interfaces.Repositories.Bookings;
 using Microsoft.EntityFrameworkCore;
 using BookingEntity = Booking.Domain.Entities.Booking;
+using ErrorMessages = Booking.Domain.Entities.MessageResource;
 
 namespace Booking.API.Services
 {
-    public class BookingService
+    public class BookingService : ServiceBase
     {
         private readonly IBookingRepository _bookingRepository;
         private readonly IBookingUtilityRepository _bookingUtilityRepository;
         private readonly IUnitOfWork _unitOfWork;
         public BookingService(IBookingRepository bookingRepository
             , IBookingUtilityRepository bookingUtilityRepository
-            , IUnitOfWork unitOfWork)
+            , IUnitOfWork unitOfWork
+            , IHttpContextAccessor httpContextAccessor) : base(httpContextAccessor)
         {
             _bookingRepository = bookingRepository;
             _unitOfWork = unitOfWork;
@@ -23,7 +25,7 @@ namespace Booking.API.Services
         public async Task<List<GetBookingResponse>> GetBookingByUserAsync()
         {
             var request = new GetBookingRequest();
-            return await _bookingRepository.GetQuery(request.GetFilterByUser(1))
+            return await _bookingRepository.GetQuery(request.GetFilterByUser(GetCurrentUserId().Id))
                         .Select(request.GetSelection())
                         .ToListAsync();
         }
@@ -70,9 +72,9 @@ namespace Booking.API.Services
             var booking = new BookingEntity(request.RoomId
                     , request.StartDay
                     , request.FinishDay
-                    , 1
-                    , "Giang"
-                    , 1);
+                    , GetCurrentUserId().Id
+                    , GetCurrentUserId().Name
+                    , GetCurrentUserId().BusinessId);
             if (request.Utilities.Any())
             {
                 foreach(var item in request.Utilities)
@@ -91,7 +93,7 @@ namespace Booking.API.Services
         {
             var booking = await _bookingRepository.GetAsync(id);
             if (booking == null)
-                throw new BadHttpRequestException("Booking not found");
+                throw new BadHttpRequestException(ErrorMessages.IsNotFoundBooking);
 
             return booking;
         }

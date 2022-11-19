@@ -1,20 +1,26 @@
 ﻿using Booking.API.Services;
 using Booking.API.ViewModel.Locations.Request;
 using Booking.API.ViewModel.Locations.Response;
+using CloudinaryDotNet.Actions;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Booking.API.Controllers
 {
     [ApiController]
     [Route("api/booking/locations")]
+    [Authorize]
     public class LocationController : ControllerBase
     {
         private readonly LocationService _locationService;
-        public LocationController(LocationService locationService)
+        private readonly PhotoService _photoService;
+        public LocationController(LocationService locationService
+            , PhotoService photoService)
         {
             _locationService = locationService;
+            _photoService = photoService;
         }
-
         [HttpGet("cities")]
         public async Task<List<LocationResponse>> GetCities()
         {
@@ -39,10 +45,16 @@ namespace Booking.API.Controllers
             return await _locationService.GetAllLocationAsync(request);
         }
 
-        [HttpGet("{businessId:int}/business")]
-        public async Task<List<LocationInfoResponse>> GetLoactionByBusiness([FromRoute]int businessId, [FromQuery] GetLocationInfoByBusinessRequest request)
+        [HttpGet("{id:int}")]
+        public async Task<LocationInfoResponse> GetLocation([FromRoute] int id)
         {
-            return await _locationService.GetLoactionByBusinessAsync(businessId, request);
+            return await _locationService.GetLocationAsync(id);
+        }
+
+        [HttpGet("business")]
+        public async Task<List<LocationInfoResponse>> GetLocationByBusiness([FromQuery] GetLocationInfoByBusinessRequest request)
+        {
+            return await _locationService.GetLoactionByBusinessAsync(request);
         }
 
         [HttpPut]
@@ -67,6 +79,11 @@ namespace Booking.API.Controllers
         public async Task<List<UtilityResponse>> GetUtilities([FromRoute] int id)
         {
             return await _locationService.GetUtilitiesAsync(id);
+        }
+        [HttpPost("test")]
+        public async Task<string> ImageUpload(IFormFile file)
+        {
+            return await _photoService.AddItemPhotoAsync(file);
         }
     }
 }

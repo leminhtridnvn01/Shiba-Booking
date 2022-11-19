@@ -9,7 +9,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace Booking.API.Controllers
 {
     [ApiController]
-    [Route("api/booking")]
+    [Route("api/booking/rooms")]
+    [Authorize]
     public class RoomController : ControllerBase
     {
         private readonly RoomService _roomService;
@@ -19,36 +20,54 @@ namespace Booking.API.Controllers
             _roomService = roomService;
         }
 
-        [HttpPost("/locations/{locationId:int}/rooms/all")]
+        [HttpPost("/api/booking/locations/{locationId:int}/rooms/all")]
         public async Task<List<RoomBasicInfoResponse>> GetAll([FromRoute] int locationId, [FromBody] RoomBasicInfoRequest request)
         {
             return await _roomService.GetByFilter(locationId, request);
         }
 
-        [HttpPost("/locations/{locationId:int}/rooms")]
-        public async Task<bool> CreateRoom([FromRoute] int locationId, [FromBody] AddRoomRequest request)
+        [HttpPost]
+        public async Task<int> CreateRoom([FromBody] AddRoomRequest request)
         {
-            return await _roomService.CreateAsync(locationId, request);
+            return await _roomService.CreateAsync(request);
+        }
+
+        [HttpPut("{id:int}")]
+        public async Task<bool> UpdateRoom([FromRoute] int id, [FromBody] UpdateRoomRequest request)
+        {
+            return await _roomService.UpdateAsync(id, request);
+        }
+
+        [HttpGet("{id:int}")]
+        public async Task<int> DeleteRoom([FromRoute] int id)
+        {
+            return await _roomService.DeleteAsync(id);
         }
 
         #region Review
 
-        [HttpGet("/locations/{locationId:int}/rooms/{roomId}/reviews")]
-        public async Task<List<ReviewResponse>> GetReview([FromRoute] int locationId, [FromRoute] int roomId)
+        [HttpGet("{roomId:int}/reviews")]
+        public async Task<List<ReviewResponse>> GetReview([FromRoute] int roomId)
         {
-            return await _roomService.GetAllReview(locationId, roomId);
+            return await _roomService.GetAllReviewAsync(roomId);
         }
 
-        [HttpPost("/locations/{locationId:int}/rooms/{roomId}/reviews")]
-        public async Task<bool> AddReview([FromRoute] int locationId, [FromRoute] int roomId, [FromBody] AddReviewRequest request)
+        [HttpPost("{roomId:int}/reviews")]
+        public async Task<bool> AddReview([FromRoute] int roomId, [FromBody] AddReviewRequest request)
         {
-            return await _roomService.AddReview(locationId, roomId, request);
+            return await _roomService.AddReviewAsync(roomId, request);
         }
 
-        [HttpDelete("/locations/{locationId:int}/rooms/{roomId}/reviews/{reviewId}")]
-        public async Task<bool> DeleteReview([FromRoute] int locationId, [FromRoute] int roomId, [FromRoute] int reviewId)
+        [HttpDelete("{roomId:int}/reviews/{reviewId}")]
+        public async Task<bool> DeleteReview([FromRoute] int roomId, [FromRoute] int reviewId)
         {
-            return await _roomService.DeleteReview(locationId, roomId, reviewId);
+            return await _roomService.DeleteReviewAsync(roomId, reviewId);
+        }
+
+        [HttpPut("reviews/{id:int}")]
+        public async Task<bool> UpdateReview([FromRoute] int id, [FromBody] UpdateReviewRequest request)
+        {
+            return await _roomService.UpdateReviewAsync(id, request);
         }
 
         #endregion

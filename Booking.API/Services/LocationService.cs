@@ -4,10 +4,11 @@ using Booking.Domain.Entities;
 using Booking.Domain.Interfaces;
 using Booking.Domain.Interfaces.Repositories.Locations;
 using Microsoft.EntityFrameworkCore;
+using ErrorMessages = Booking.Domain.Entities.MessageResource;
 
 namespace Booking.API.Services
 {
-    public class LocationService
+    public class LocationService : ServiceBase
     {
         private readonly ICityRepository _cityRepository;
         private readonly IDistrictRepository _districtRepository;
@@ -20,7 +21,8 @@ namespace Booking.API.Services
             , IWardsRepository wardsRepository
             , ILocationRepository locationRepository
             , IUnitOfWork unitOfWork
-            , IUtilityRepository utilityRepository)
+            , IUtilityRepository utilityRepository
+            , IHttpContextAccessor httpContextAccessor) : base(httpContextAccessor)
         {
             _cityRepository = cityRepository;
             _districtRepository = districtRepository;
@@ -59,6 +61,30 @@ namespace Booking.API.Services
             return await _locationRepository.GetQuery(request.GetFilter(request))
                     .Select(request.GetSelection()).ToListAsync();
         }
+        public async Task<LocationInfoResponse> GetLocationAsync(int id)
+        {
+            var location = await ValidateLocationAsync(id);
+            return new LocationInfoResponse
+            {
+                Id = location.Id,
+                Name = location.Name,
+                Description = location.Description,
+                Address = location.Address,
+                CityId = location.CityId,
+                City = location.Wards.District.City.Name,
+                DistrictId = location.DistrictId,
+                District = location.Wards.District.Name,
+                WardsId = location.WardsId,
+                Wards = location.Wards.Name,
+                IsActive = location.IsActive,
+                UtilityResponses = location.Utilitys.Select(_ => new UtilityResponse
+                {
+                    Id = _.Id,
+                    Name = _.Name,
+                    Price = _.Price
+                }).ToList()
+            };
+        }
 
         public async Task<List<UtilityResponse>> GetUtilitiesAsync(int id)
         {
@@ -77,7 +103,7 @@ namespace Booking.API.Services
             var location = new Location(request.Name
                 , request.Description
                 , request.Address
-                , 1
+                , GetCurrentUserId().BusinessId
                 , request.CityId
                 , request.DistrictId
                 , request.WardsId
@@ -96,9 +122,9 @@ namespace Booking.API.Services
             
         }
 
-        public async Task<List<LocationInfoResponse>> GetLoactionByBusinessAsync(int businessId, GetLocationInfoByBusinessRequest request)
+        public async Task<List<LocationInfoResponse>> GetLoactionByBusinessAsync(GetLocationInfoByBusinessRequest request)
         {
-            request.SetId(businessId);
+            request.SetId(GetCurrentUserId().BusinessId);
             return await _locationRepository.GetQuery(request.GetFilter())
                         .Select(request.GetSelection())
                         .ToListAsync();
@@ -106,7 +132,12 @@ namespace Booking.API.Services
 
         public async Task<int> UpdateAsync(UpdateInfoLocationRequest model)
         {
-            var location = await GetLocationAsync(model.Id);
+            var location = await ValidateLocationAsync(model.Id);
+
+            if (location.BusinessId != GetCurrentUserId().BusinessId)
+            {
+                throw new BadHttpRequestException(ErrorMessages.IsNotOwnerLocation);
+            }
 
             location.UpdateInfo(model.Name
                 , model.Description
@@ -130,26 +161,31 @@ namespace Booking.API.Services
 
         public async Task<int> DeleteAsync(int id)
         {
-            var location = await GetLocationAsync(id);
+            var location = await ValidateLocationAsync(id);
+
+            if (location.BusinessId != GetCurrentUserId().BusinessId)
+            {
+                throw new BadHttpRequestException(ErrorMessages.IsNotOwnerLocation);
+            }
 
             location.Remove();
             await _unitOfWork.SaveChangeAsync();
 
             return location.Id;
         }
-        public async Task<Location> GetLocationAsync(int id)
+        public async Task<Location> ValidateLocationAsync(int id)
         {
             var location = await _locationRepository.GetAsync(id);
             if (location == null)
-                throw new BadHttpRequestException("Business not found");
+                throw new BadHttpRequestException(ErrorMessages.IsNotFoundLocation);
 
             return location;
         }
 
         public async Task ValidateOnGetLocationAsync(int id)
         {
-            if (! await _locationRepository.AnyAsync(id))
-                throw new BadHttpRequestException("Business not found");
+            if (!await _locationRepository.AnyAsync(id))
+                throw new BadHttpRequestException(ErrorMessages.IsNotFoundLocation);
         }
     }
 }

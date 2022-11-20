@@ -1,4 +1,7 @@
-﻿using Booking.API.Services;
+﻿using Booking.API.IntegrationEvents.EventHandles;
+using Booking.API.IntegrationEvents.Events;
+using Booking.API.Services;
+using Booking.Domain.DomainEvents.Locations;
 using Booking.Domain.Interfaces;
 using Booking.Domain.Interfaces.Repositories;
 using Booking.Infrastructure.Data;
@@ -93,6 +96,7 @@ namespace Booking.API.Extensions
 
                 var factory = new ConnectionFactory();
                 factory.Uri = new Uri(Configuration.GetSection("RabbitMQConnectionString").Value);
+                factory.DispatchConsumersAsync = true;
 
                 var retryCount = Int32.Parse(Configuration.GetSection("EventBusRetryCount").Value);
 
@@ -103,6 +107,7 @@ namespace Booking.API.Extensions
         public static IServiceCollection RegisterMediator(this IServiceCollection services)
         {
             services.AddMediatR(Assembly.GetExecutingAssembly());
+            services.AddMediatR(typeof(DeleteLocationDomainEvent).GetTypeInfo().Assembly);
             //services.AddMediatR(typeof(CreateUserDomainEvent).GetTypeInfo().Assembly);
             return services;
         }
@@ -110,7 +115,7 @@ namespace Booking.API.Extensions
         {
             services.AddSingleton<IEventBus, EventBusRabbitMQServices>(sp =>
             {
-                var subscriptionClientName = "queue_test";
+                var subscriptionClientName = "queue_booking";
                 var logger = sp.GetRequiredService<ILogger<EventBusRabbitMQServices>>();
                 var eventBusSubcriptionsManager = sp.GetRequiredService<IEventBusSubscriptionsManager>();
                 var rabbitMQPersistentConnection = sp.GetRequiredService<IRabbitMQPersistentConnection>();
@@ -122,7 +127,7 @@ namespace Booking.API.Extensions
 
             services.AddSingleton<IEventBusSubscriptionsManager, InMemoryEventBusSubscriptionsManager>();
 
-            //services.AddTransient<IIntegrationEventHandler<UserCreatedIntergrationEvent>, UserCreatedIntergrationEventHandler>();
+            services.AddTransient<IIntegrationEventHandler<UserCreatedIntergrationEvent>, UserCreatedIntergrationEventHandler>();
             return services;
         }
     }

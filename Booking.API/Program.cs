@@ -20,7 +20,7 @@ var configuration = new ConfigurationBuilder()
 configuration.GetSection("AppSettings").Get<AppSettings>(options => options.BindNonPublicProperties = true);
 configuration.GetSection("CloudinarySettings").Get<CloudinarySettings>(options => options.BindNonPublicProperties = true);
 
-//var hcBuilder = builder.Services.AddHealthChecks();
+builder.Services.AddHealthChecks();
 
 //hcBuilder.AddRabbitMQ($"amqp://localhost", name: "rabbitmq", tags: new string[] { "rabbitmqbus" });
 

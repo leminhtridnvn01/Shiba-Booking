@@ -45,7 +45,7 @@ app.UseCors(x => x
                                                     //.AllowCredentials()
                 .WithExposedHeaders("*")
                 .SetPreflightMaxAge(TimeSpan.FromSeconds(600)));
-
+app.UseHealthChecks($"/healthcheck");
 app.UseAuthentication();
 
 app.UseAuthorization();
